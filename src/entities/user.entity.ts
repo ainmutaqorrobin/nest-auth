@@ -15,17 +15,18 @@ export class User {
   @Column()
   email: string;
 
-  @Column()
-  avatarUrl: string;
+  @Column({ nullable: true })
+  avatarUrl?: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 
   @Column()
-  createdAt: string;
-
-  @Column({ default: 'User@123' })
   password: string;
 
   @BeforeInsert()
-  async hasPassword() {
+  async hashPassword() {
+    if (!this.password) return;
     this.password = await hash(this.password, 10);
   }
 }
