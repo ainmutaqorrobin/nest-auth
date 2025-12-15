@@ -21,7 +21,7 @@ export class User {
   @Column()
   createdAt: string;
 
-  @Column()
+  @Column({ default: 'User@123' })
   password: string;
 
   @BeforeInsert()
