@@ -24,6 +24,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column()
+  hashedRefreshToken: string;
+
   @BeforeInsert()
   async hashPassword() {
     if (!this.password) return;
