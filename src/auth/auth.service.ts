@@ -5,7 +5,7 @@ import { UserService } from 'src/user/user.service';
 import { AuthJwtPayload } from './types/auth-jwtPayload';
 import refreshJwtConfig from './config/refresh-jwt.config';
 import type { ConfigType } from '@nestjs/config';
-import { hash } from 'argon2';
+import { hash, verify } from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -48,10 +48,35 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  refreshToken(userId: number) {
-    const payload: AuthJwtPayload = { sub: userId };
-    const token = this.jwtService.sign(payload);
+  async refreshToken(userId: number) {
+    const { accessToken, refreshToken } = await this.generateToken(userId);
 
-    return { id: userId, token };
+    const hashedRefreshToken = await hash(refreshToken);
+
+    //store to db
+    await this.userService.updateHashedRefreshToken(userId, hashedRefreshToken);
+
+    return { id: userId, accessToken, refreshToken };
+  }
+
+  async validateRefreshToken(userId: number, refreshToken: string) {
+    const user = await this.userService.findOne(userId);
+    console.log('user is ========', user);
+    if (!user || !user.hashedRefreshToken)
+      throw new UnauthorizedException('Invalid Refresh Token #1');
+
+    const refreshTokenMatched = await verify(
+      user.hashedRefreshToken,
+      refreshToken,
+    );
+
+    if (!refreshTokenMatched)
+      throw new UnauthorizedException('Invalid Refresh Token #2');
+
+    return { id: userId };
+  }
+
+  async signout(userId: number) {
+    await this.userService.updateHashedRefreshToken(userId, null);
   }
 }
