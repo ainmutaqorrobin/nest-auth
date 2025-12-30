@@ -7,6 +7,7 @@ import refreshJwtConfig from './config/refresh-jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import { hash, verify } from 'argon2';
 import { CurrentUser } from './types/current-user';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -89,5 +90,13 @@ export class AuthService {
 
   async signout(userId: number) {
     await this.userService.updateHashedRefreshToken(userId, null);
+  }
+
+  async validateGoogleUser(googleUser: CreateUserDto) {
+    const user = await this.userService.findByEmail(googleUser.email);
+
+    if (user) return user;
+
+    return await this.userService.create(googleUser);
   }
 }
